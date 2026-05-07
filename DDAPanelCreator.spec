@@ -1,5 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+# Some notes on getting a smaller bundle:
+# 1) On macOS UPX is turned off by default by PyInstaller, due to signing and other issues, so probably not worth trying.
+# 2) Installing a fresh environment (using menv - not anaconda!) for the packaging works well. Don't forget openpyxl for reading Excel files (it's not in the imports).
 
 a = Analysis(
     ['dda_panel_creator.py'],
@@ -13,7 +16,7 @@ a = Analysis(
     excludes=[ 
         'matplotlib', 'scipy',  # The big four bloaters # We do need numpy and pandas
         'PyQt5', 'PyQt6', 'PySide2', 'PySide6',    # GUI bloat
-        'tkinter', 'test', 'unittest', 'email',    # Standard library bloat
+        'tkinter', 'test', 'unittest',    # Standard library bloat # fails without 'email' for some reason
         'notebook', 'IPython',                     # Jupyter bloat
         # More PyQT and other exclusions:
         'qt6', 'qt', 'Qt6', 'Qt', # Binary name variations
