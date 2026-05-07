@@ -78,6 +78,7 @@ def process_and_save_grids(
     timepoints: List[str], 
     output_dirs: Dict[str, Path], 
     group_name: str = "all_plates",
+    horizontal_label_rotation: Optional[str] = None,
     slice_height: int = 40,
     slice_width: int = 400,
 ):
@@ -142,7 +143,8 @@ def process_and_save_grids(
                 target_path, 
                 layout=kind, 
                 orientation=orientation,
-                max_slice_width=slice_width
+                max_slice_width=slice_width,
+                horizontal_label_rotation=horizontal_label_rotation
             )
 
 def run_pipeline(args):
@@ -166,13 +168,15 @@ def run_pipeline(args):
         sort_order.index(img.genotype) if img.genotype in sort_order else len(sort_order), 
         img.plate_id
     ))
+
+    horizontal_label_rotation = {"Horizontal": None, "Clockwise": "right", "Counterclockwise": "left"}.get(args.horizontal_label_rotation, "Counterclockwise")
     
-    process_and_save_grids(all_images, timepoints, dir_map, slice_height=args.slice_height, slice_width=args.slice_width)
+    process_and_save_grids(all_images, timepoints, dir_map, horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width)
     
     unique_genotypes = sorted({img.genotype for img in all_images if img.genotype})
     for genotype in unique_genotypes:
         genotype_subset = [img for img in all_images if img.genotype == genotype]
-        process_and_save_grids(genotype_subset, timepoints, dir_map, group_name=f"genotype_{genotype}", slice_height=args.slice_height, slice_width=args.slice_width)
+        process_and_save_grids(genotype_subset, timepoints, dir_map, group_name=f"genotype_{genotype}", horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width)
 
 @Gooey(
     program_name="DDA Grid Creator",
@@ -223,6 +227,18 @@ def main():
     )
 
     visualization_group = parser.add_argument_group("Visualization")
+    visualization_group.add_argument(
+        "--horizontal-label-rotation",
+        choices=["Counterclockwise", "Clockwise", "Horizontal"],
+        type=str,
+        default="Counterclockwise",
+        metavar="Label rotation for horizontal layouts",
+        help="Label rotation for horizontal layouts of slice panels.\n"+\
+        "1) Counterclockwise - labels will be rotated 90 degrees counterclockwise (default).\n"+\
+        "2) Clockwise - labels will be rotated 90 degrees clockwise.\n"+\
+        "3) Horizontal - labels will be horizontal.",
+    )
+
     visualization_group.add_argument(
         "--slice-height",
         type=int,
