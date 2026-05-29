@@ -30,14 +30,19 @@ def discover_plate_images(folder_paths: List[str]) -> List[PlateImage]:
     plate_pattern = re.compile(r"Run-\d+-Plate-(\d+)\.png$")
     
     for folder in map(Path, folder_paths):
+        folder_images = []
         for img_file in folder.glob("*.png"):
             match = plate_pattern.search(img_file.name)
             if match:
                 plate_id = int(match.group(1))
                 prefix = img_file.name.split("Run-")[0].rstrip("-")
-                discovered_images.append(
+                folder_images.append(
                     PlateImage(img_file, plate_id, folder.name, prefix)
                 )
+        plate_ids = sorted(img.plate_id for img in folder_images)
+        for img in folder_images:
+            img.plate_id = plate_ids.index(img.plate_id) + 1
+        discovered_images.extend(folder_images)
     return discovered_images
 
 def apply_metadata_from_excel(
