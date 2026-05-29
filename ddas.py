@@ -629,6 +629,7 @@ def find_dda_disk(
     max_radius: int = 50,
     max_dev_from_center: int = 50,
     min_thresh_intensity: int = 230,
+    morph_kernel_size: int = 9,
     debug_folder: Optional[Union[str, Path]] = None,
 ) -> Tuple[Tuple[int, int], int]:
     """
@@ -651,6 +652,8 @@ def find_dda_disk(
     min_thresh_intensity : int, default=230
         Intensity threshold used to binarize the grayscale image before
         contour detection.
+    morph_kernel_size : int, default=9
+        Size of the structuring element used to separate attached noise and fill holes.
     debug_folder : str or Path or None, default=None
         Optional directory for saving diagnostic outputs.
 
@@ -677,7 +680,7 @@ def find_dda_disk(
 
     in_file = str(Path(in_file).expanduser().resolve())
 
-    key = (in_file, max_radius, max_dev_from_center, min_thresh_intensity)
+    key = (in_file, max_radius, max_dev_from_center, min_thresh_intensity, morph_kernel_size)
 
     if key in _DDA_DISK_CACHE and not debug_folder:
         return _DDA_DISK_CACHE[key]
@@ -725,6 +728,14 @@ def find_dda_disk(
 
     thresh_inner = thresh[y0:y1, x0:x1]
     # ------------------------------------------------------------
+
+    # ------------------------------------------------------------
+    # Detach noise and fill holes using morphological operations
+    # ------------------------------------------------------------
+    if morph_kernel_size > 0:
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (morph_kernel_size, morph_kernel_size))
+        thresh_inner = cv2.morphologyEx(thresh_inner, cv2.MORPH_OPEN, kernel)
+        thresh_inner = cv2.morphologyEx(thresh_inner, cv2.MORPH_CLOSE, kernel)
 
     # Find contours only in the inner square
     contours, _ = cv2.findContours(
