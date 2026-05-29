@@ -86,6 +86,7 @@ def process_and_save_grids(
     horizontal_label_rotation: Optional[str] = None,
     slice_height: int = 40,
     slice_width: int = 400,
+    crop: Optional[int] = None,
 ):
     unique_ids = sorted({img.plate_id for img in images})
 
@@ -110,7 +111,8 @@ def process_and_save_grids(
         image_grid_paths,
         ordered_labels,
         timepoints,
-        output_dirs["grid_vertical"] / f"{group_name}.jpg"
+        output_dirs["grid_vertical"] / f"{group_name}.jpg",
+        crop=crop
     )
     
     create_dda_grid(
@@ -118,7 +120,8 @@ def process_and_save_grids(
         ordered_labels,
         timepoints,
         output_dirs["grid_horizontal"] / f"{group_name}.jpg",
-        orientation='horizontal'
+        orientation='horizontal',
+        crop=crop
     )
     
     for tp_start, tp_end in itertools.combinations(timepoints, 2):
@@ -175,13 +178,15 @@ def run_pipeline(args):
     ))
 
     horizontal_label_rotation = {"Horizontal": None, "Clockwise": "right", "Counterclockwise": "left"}.get(args.horizontal_label_rotation, "Counterclockwise")
+
+    crop = args.crop if args.crop > 0 else None
     
-    process_and_save_grids(all_images, timepoints, dir_map, horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width)
+    process_and_save_grids(all_images, timepoints, dir_map, horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width, crop=crop)
     
     unique_genotypes = sorted({img.genotype for img in all_images if img.genotype})
     for genotype in unique_genotypes:
         genotype_subset = [img for img in all_images if img.genotype == genotype]
-        process_and_save_grids(genotype_subset, timepoints, dir_map, group_name=f"genotype_{genotype}", horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width)
+        process_and_save_grids(genotype_subset, timepoints, dir_map, group_name=f"genotype_{genotype}", horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width, crop=crop)
 
 @Gooey(
     program_name="DDA Grid Creator",
@@ -259,6 +264,15 @@ def main():
         metavar="Distance from the disk to the edge of the plate",
         help="Slice width in pixels - the distance from the center of the disk to the edge of the plate you want to be displayed" +\
             " (doesn't have to be the whole plate).",
+    )
+
+    visualization_group.add_argument(
+        "--crop",
+        type=int,
+        default=0,
+        metavar="Optional cropping of the input images in pixels.",
+        help="If the input images are not cropped to the plate size, you can set this to a value different from 0 (650 is recommended" +\
+            " if the images came from Phenobooth).",
     )
     
     args = parser.parse_args()
