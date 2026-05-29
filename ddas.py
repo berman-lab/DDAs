@@ -172,6 +172,15 @@ def create_dda_grid(
 
         y_offset += row_area_height + padding
 
+    # Downscale if the image exceeds common format limits (e.g., JPEG's 65535 pixel limit).
+    # We use 65500 as a safe maximum dimension to proactively scale down.
+    max_dim = 65500
+    if grid_img.width > max_dim or grid_img.height > max_dim:
+        scale_factor = max_dim / max(grid_img.width, grid_img.height)
+        new_width = int(grid_img.width * scale_factor)
+        new_height = int(grid_img.height * scale_factor)
+        grid_img = grid_img.resize((new_width, new_height), Image.LANCZOS)
+    
     grid_img.save(out_file)
 
 def create_stacked_image(
