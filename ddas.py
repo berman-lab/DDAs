@@ -278,6 +278,7 @@ def create_stacked_image(
     # -------------------------------
     label_images = []
     max_label_height = 0
+    max_label_width = 0
     dummy = Image.new("RGB", (10, 10))
     ddraw = ImageDraw.Draw(dummy)
     ascent, descent = font.getmetrics()
@@ -296,6 +297,7 @@ def create_stacked_image(
                 lbl = lbl.rotate(-90, expand=True)
         label_images.append(lbl)
         max_label_height = max(max_label_height, lbl.height)
+        max_label_width = max(max_label_width, lbl.width)
 
     label_band_height = max_label_height + 6
 
@@ -317,7 +319,7 @@ def create_stacked_image(
         radii.extend([r1, r2])
     x_offsets = [0] + [centers_x[0] - cx for cx in centers_x[1:]]
     display_width = (max_slice_width if max_slice_width else img_width) // 2
-    left_margin = 100
+    left_margin = max(100, max_label_width + 10)
     n = len(labels)
 
     # -------------------------------
