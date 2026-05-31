@@ -88,7 +88,9 @@ def process_and_save_grids(
     slice_width: int = 400,
     crop: Optional[int] = None,
 ):
-    unique_ids = sorted({img.plate_id for img in images})
+    unique_ids = [img.plate_id for img in images] # TODO: remove duplicates while keeping the original order
+    seen = set()
+    unique_ids = [x for x in unique_ids if not (x in seen or seen.add(x))]
 
     id_to_label = {}
     for pid in unique_ids:
@@ -172,8 +174,10 @@ def run_pipeline(args):
     apply_metadata_from_excel(all_images, args.excel, args.sheet)
     
     sort_order = [val.strip() for val in (args.order or "").split(",")]
+    label_sort_order = [val.strip() for val in (args.label_order or "").split(",")]
     all_images.sort(key=lambda img: (
         sort_order.index(img.genotype) if img.genotype in sort_order else len(sort_order), 
+        label_sort_order.index(img.metadata_label) if img.metadata_label in label_sort_order else len(label_sort_order),
         img.plate_id
     ))
 
@@ -234,6 +238,13 @@ def main():
         default="",
         metavar="Sort order (optional)",
         help="Comma-separated list of Genotypes to define sort order"
+    )
+
+    meta_group.add_argument(
+        "--label-order",
+        default="",
+        metavar="Label sort order (optional)",
+        help="Comma-separated list of Labels to define sort order within each genotype"
     )
 
     visualization_group = parser.add_argument_group("Visualization")
