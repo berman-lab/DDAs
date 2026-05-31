@@ -190,7 +190,7 @@ def create_stacked_image(
     height: int,
     out_file: Union[str, Path],
     sep_size: int = 3,
-    sep_color: Tuple[int, int, int] = (0, 0, 0),
+    sep_color: Union[str, Tuple[int, int, int]] = "black",
     max_slice_width: Optional[int] = None,
     layout: Literal['stacked', 'opposite'] = 'stacked',
     orientation: Literal['vertical', 'horizontal'] = 'vertical',
@@ -223,8 +223,8 @@ def create_stacked_image(
         Path to the output image file.
     sep_size : int, default=3
         Thickness of separator lines in pixels.
-    sep_color : tuple of int, default=(0, 0, 0)
-        Separator color in ``(R, G, B)`` format.
+    sep_color : str or tuple of int, default="black"
+        Separator color compatible with PIL (e.g., ``(R, G, B)``, hex string, or color name).
     max_slice_width : int or None, default=None
         Maximum length (in pixels) of cropped slices from the disk to the plate edge.
         If ``None``, the full image width is used before halving.

@@ -87,6 +87,8 @@ def process_and_save_grids(
     slice_height: int = 40,
     slice_width: int = 400,
     crop: Optional[int] = None,
+    sep_size: int = 3,
+    sep_color: str = "black",
 ):
     unique_ids = [img.plate_id for img in images] # TODO: remove duplicates while keeping the original order
     seen = set()
@@ -154,7 +156,9 @@ def process_and_save_grids(
                 layout=kind, 
                 orientation=orientation,
                 max_slice_width=slice_width,
-                horizontal_label_rotation=horizontal_label_rotation
+                horizontal_label_rotation=horizontal_label_rotation,
+                sep_size=sep_size,
+                sep_color=sep_color
             )
 
 def run_pipeline(args):
@@ -185,12 +189,12 @@ def run_pipeline(args):
 
     crop = args.crop if args.crop > 0 else None
     
-    process_and_save_grids(all_images, timepoints, dir_map, horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width, crop=crop)
+    process_and_save_grids(all_images, timepoints, dir_map, horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width, crop=crop, sep_size=args.sep_size, sep_color=args.sep_color)
     
     unique_genotypes = sorted({img.genotype for img in all_images if img.genotype})
     for genotype in unique_genotypes:
         genotype_subset = [img for img in all_images if img.genotype == genotype]
-        process_and_save_grids(genotype_subset, timepoints, dir_map, group_name=f"genotype_{genotype}", horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width, crop=crop)
+        process_and_save_grids(genotype_subset, timepoints, dir_map, group_name=f"genotype_{genotype}", horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width, crop=crop, sep_size=args.sep_size, sep_color=args.sep_color)
 
 @Gooey(
     program_name="DDA Grid Creator",
@@ -284,6 +288,23 @@ def main():
         metavar="Optional cropping of the input images in pixels.",
         help="If the input images are not cropped to the plate size, you can set this to a value different from 0 (650 is recommended" +\
             " if the images came from Phenobooth).",
+    )
+
+    visualization_group.add_argument(
+        "--sep-size",
+        type=int,
+        default=3,
+        metavar="Separator size",
+        help="Thickness of the separator lines in pixels.",
+    )
+
+    visualization_group.add_argument(
+        "--sep-color",
+        type=str,
+        default="black",
+        widget="ColourChooser",
+        metavar="Separator color",
+        help="Color of the separator lines.",
     )
     
     args = parser.parse_args()
