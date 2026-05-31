@@ -196,8 +196,10 @@ def run_pipeline(args):
         genotype_subset = [img for img in all_images if img.genotype == genotype]
         process_and_save_grids(genotype_subset, timepoints, dir_map, group_name=f"genotype_{genotype}", horizontal_label_rotation=horizontal_label_rotation, slice_height=args.slice_height, slice_width=args.slice_width, crop=crop, sep_size=args.sep_size, sep_color=args.sep_color)
 
+__version__ = "1.3.0"
+
 @Gooey(
-    program_name="DDA Grid Creator",
+    program_name=f"DDA Grid Creator v{__version__}",
     default_size=(700, 720),
 )
 def main():
