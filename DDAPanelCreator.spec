@@ -14,7 +14,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[ 
-        'matplotlib', 'scipy',  # The big four bloaters # We do need numpy and pandas
+        'scipy',  # The big four bloaters # We do need numpy and pandas
         'PyQt5', 'PyQt6', 'PySide2', 'PySide6',    # GUI bloat
         'tkinter', 'test', 'unittest',    # Standard library bloat # fails without 'email' for some reason
         'notebook', 'IPython',                     # Jupyter bloat

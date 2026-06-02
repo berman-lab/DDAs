@@ -1,0 +1,7 @@
+Gooey
+matplotlib
+numpy
+opencv-python
+openpyxl
+pandas
+Pillow

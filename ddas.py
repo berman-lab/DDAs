@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 import numpy as np
 import cv2
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 def create_dda_grid(
     image_lists: List[List[Union[str, Path]]],
