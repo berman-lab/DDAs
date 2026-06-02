@@ -34,10 +34,8 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    [] if is_mac else a.binaries,
-    [] if is_mac else a.datas,
     [],
-    exclude_binaries=is_mac,
+    exclude_binaries=True,
     name='DDAPanelCreator',
     debug=False,
     bootloader_ignore_signals=False,
@@ -53,25 +51,26 @@ exe = EXE(
     entitlements_file=None,
 )
 
-if is_mac:
 coll = COLLECT(
     exe,
     a.binaries,
     a.datas,
     strip=False,
-        upx=False,
+    upx=not is_mac,
     upx_exclude=[],
     name='DDAPanelCreator',
 )
-app = BUNDLE(
-    coll,
-    name='DDAPanelCreator.app',
-    icon=None,
-    bundle_identifier=None,
-    # This fixes a weird bug on macOS where the text would be white on light backgrounds or black on dark backgrounds.
-    # This seems to force a theme, fixing this issue.
-    info_plist={
-        'NSRequiresAquaSystemAppearance': 'True', # Forces Light Mode
-        'NSAppearance': 'Aqua',                   # Forces the Aqua (Light) theme
-    },
-)
+
+if is_mac:
+    app = BUNDLE(
+        coll,
+        name='DDAPanelCreator.app',
+        icon=None,
+        bundle_identifier=None,
+        # This fixes a weird bug on macOS where the text would be white on light backgrounds or black on dark backgrounds.
+        # This seems to force a theme, fixing this issue.
+        info_plist={
+            'NSRequiresAquaSystemAppearance': 'True', # Forces Light Mode
+            'NSAppearance': 'Aqua',                   # Forces the Aqua (Light) theme
+        },
+    )
