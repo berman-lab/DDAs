@@ -3,7 +3,6 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 import numpy as np
 import cv2
 from pathlib import Path
-import matplotlib.pyplot as plt
 
 def create_dda_grid(
     image_lists: List[List[Union[str, Path]]],
@@ -921,6 +920,8 @@ def plot_pixel_intensities_from_plate(
     # Create scatter plot
     fig = None
     if plot:
+        import matplotlib.pyplot as plt
+
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.scatter(range(start_radius, start_radius + len(intensities)), intensities, s=5, color='black')
         ax.set_xlabel("Radius (pixels)")
@@ -998,6 +999,8 @@ def plot_pixel_intensities(
     ax : matplotlib.axes.Axes
         Axes containing the plot.
     """
+
+    import matplotlib.pyplot as plt
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(8, 4))
