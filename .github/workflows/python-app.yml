@@ -6,6 +6,9 @@ on:
       - 'v*' # Triggers the build automatically when you push a version tag like v1.0.0
   workflow_dispatch: # Adds the manual "Run workflow" test button
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     strategy:
