@@ -1,9 +1,10 @@
-name: Package Python App with PyInstaller
+name: Package the DDA Panel Creator with PyInstaller
 
 on:
   push:
     tags:
       - 'v*' # Triggers the build automatically when you push a version tag like v1.0.0
+  workflow_dispatch: # Adds the manual "Run workflow" test button
 
 jobs:
   build:
