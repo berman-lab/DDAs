@@ -629,6 +629,7 @@ def clear_dda_disk_cache() -> None:
 def find_dda_disk(
     in_file: Union[str, Path],
     max_radius: int = 50,
+    min_radius: int = 10,
     max_dev_from_center: int = 50,
     min_thresh_intensity: int = 230,
     morph_kernel_size: int = 9,
@@ -761,7 +762,7 @@ def find_dda_disk(
         radius = int(radius)
 
         if (
-            10 < radius <= max_radius
+            min_radius < radius <= max_radius
             and abs(center[0] - image_center[0]) < max_dev_from_center
             and abs(center[1] - image_center[1]) < max_dev_from_center
         ):
@@ -1083,3 +1084,98 @@ def draw_circles(
         )
 
     return out
+
+def find_petri_dish(
+    image_path: Union[str, Path],
+    min_diameter: float,
+    max_diameter: float,
+    debug_folder: Optional[Union[str, Path]] = None,
+) -> Tuple[Tuple[int, int], float]:
+    """
+    Detect a petri dish on a dark background.
+    
+    Parameters
+    ----------
+    image_path : str or Path
+        Path to the input image.
+    min_diameter : float
+        Minimum plate diameter in pixels.
+    max_diameter : float
+        Maximum plate diameter in pixels.
+    debug_folder : str or Path or None, default=None
+        Optional directory for saving diagnostic outputs.
+        
+    Returns
+    -------
+    ((cx, cy), diameter) : tuple
+        center : tuple of int
+            Detected plate center (x, y).
+        diameter : float
+            Detected plate diameter.
+    """
+    image_path_str = str(Path(image_path).expanduser().resolve())
+    prefix = Path(image_path).stem
+
+    # Load image
+    img_bgr = cv2.imread(image_path_str)
+    if img_bgr is None:
+        raise FileNotFoundError(f"Could not load image: {image_path_str}")
+
+    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+
+    # Binarize image (assuming dark background) using Otsu's thresholding
+    otsu_thresh, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    h, w = gray.shape
+    current_thresh = otsu_thresh
+    valid_circles = []
+
+    while current_thresh < 255:
+        # Find contours
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        valid_circles = []
+        for cnt in contours:
+            (x, y), radius = cv2.minEnclosingCircle(cnt)
+            diameter = radius * 2
+            
+            if x < diameter or y < diameter or (w - x) < diameter or (h - y) < diameter:
+                continue
+                
+            if min_diameter <= diameter <= max_diameter:
+                valid_circles.append(((int(x), int(y)), diameter))
+
+        if len(valid_circles) > 0:
+            break
+            
+        current_thresh += 10
+        if current_thresh < 255:
+            _, thresh = cv2.threshold(gray, current_thresh, 255, cv2.THRESH_BINARY)
+
+    if debug_folder:
+        debug_folder_path = Path(debug_folder)
+        debug_folder_path.mkdir(parents=True, exist_ok=True)
+        
+        # 1) Save the binarized image
+        cv2.imwrite(str(debug_folder_path / f"{prefix}_binarized_debug.png"), thresh)
+
+        # 2) Save all of the potential found circles, in red
+        pil_img = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+        draw = ImageDraw.Draw(pil_img)
+        
+        for (cx, cy), d in valid_circles:
+            r = d / 2
+            draw.ellipse(
+                [cx - r, cy - r, cx + r, cy + r],
+                outline="red",
+                width=2
+            )
+        
+        pil_img.save(debug_folder_path / f"{prefix}_circles_debug.png")
+
+    if len(valid_circles) > 1:
+        raise ValueError(f"Found more than one circle matching the criteria in {image_path_str}.")
+    elif len(valid_circles) == 0:
+        raise ValueError(f"No circle matching the criteria found in {image_path_str}.")
+
+    return valid_circles[0]
