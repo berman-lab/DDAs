@@ -632,6 +632,8 @@ def find_dda_disk(
     max_dev_from_center: int = 50,
     min_thresh_intensity: int = 230,
     morph_kernel_size: int = 9,
+    offset_x: int = 0,
+    offset_y: int = 0,
     debug_folder: Optional[Union[str, Path]] = None,
 ) -> Tuple[Tuple[int, int], int]:
     """
@@ -656,6 +658,10 @@ def find_dda_disk(
         contour detection.
     morph_kernel_size : int, default=9
         Size of the structuring element used to separate attached noise and fill holes.
+    offset_x : int, default=0
+        Horizontal offset relative to the geometric center to start the disk search.
+    offset_y : int, default=0
+        Vertical offset relative to the geometric center to start the disk search.
     debug_folder : str or Path or None, default=None
         Optional directory for saving diagnostic outputs.
 
@@ -682,7 +688,7 @@ def find_dda_disk(
 
     in_file = str(Path(in_file).expanduser().resolve())
 
-    key = (in_file, max_radius, max_dev_from_center, min_thresh_intensity, morph_kernel_size)
+    key = (in_file, max_radius, max_dev_from_center, min_thresh_intensity, morph_kernel_size, offset_x, offset_y)
 
     if key in _DDA_DISK_CACHE and not debug_folder:
         return _DDA_DISK_CACHE[key]
@@ -713,7 +719,7 @@ def find_dda_disk(
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     h, w = gray.shape
-    image_center = (w // 2, h // 2)
+    image_center = (w // 2 + offset_x, h // 2 + offset_y)
 
     # Threshold the image to detect bright regions
     _, thresh = cv2.threshold(gray, min_thresh_intensity, 255, cv2.THRESH_BINARY)
