@@ -1145,33 +1145,33 @@ def find_petri_dish(
             if min_diameter <= diameter <= max_diameter:
                 valid_circles.append(((int(x), int(y)), diameter))
 
+        if debug_folder:
+            debug_folder_path = Path(debug_folder)
+            debug_folder_path.mkdir(parents=True, exist_ok=True)
+            
+            # 1) Save the binarized image
+            cv2.imwrite(str(debug_folder_path / f"{prefix}_binarized_debug-{int(current_thresh)}.png"), thresh)
+
+            # 2) Save all of the potential found circles, in red
+            pil_img = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
+            draw = ImageDraw.Draw(pil_img)
+            
+            for (cx, cy), d in valid_circles:
+                r = d / 2
+                draw.ellipse(
+                    [cx - r, cy - r, cx + r, cy + r],
+                    outline="red",
+                    width=2
+                )
+            
+            pil_img.save(debug_folder_path / f"{prefix}_circles_debug-{int(current_thresh)}.png")
+
         if len(valid_circles) > 0:
             break
             
         current_thresh += 10
         if current_thresh < 255:
             _, thresh = cv2.threshold(gray, current_thresh, 255, cv2.THRESH_BINARY)
-
-    if debug_folder:
-        debug_folder_path = Path(debug_folder)
-        debug_folder_path.mkdir(parents=True, exist_ok=True)
-        
-        # 1) Save the binarized image
-        cv2.imwrite(str(debug_folder_path / f"{prefix}_binarized_debug.png"), thresh)
-
-        # 2) Save all of the potential found circles, in red
-        pil_img = Image.fromarray(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB))
-        draw = ImageDraw.Draw(pil_img)
-        
-        for (cx, cy), d in valid_circles:
-            r = d / 2
-            draw.ellipse(
-                [cx - r, cy - r, cx + r, cy + r],
-                outline="red",
-                width=2
-            )
-        
-        pil_img.save(debug_folder_path / f"{prefix}_circles_debug.png")
 
     if len(valid_circles) > 1:
         raise ValueError(f"Found more than one circle matching the criteria in {image_path_str}.")
