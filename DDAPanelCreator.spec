@@ -96,23 +96,24 @@ if is_mac:
     )
 
 # =============================================================================
-# AUTOMATED POST-BUILD WORKFLOW (Pure ASCII - Cross-Platform)
+# AUTOMATED POST-BUILD WORKFLOW (macOS Only)
 # =============================================================================
 import os
 
-print("\n" + "="*60)
-print("--- [Post-Build] Dynamically Patching OpenCV Portability ---")
-print("="*60)
+if is_mac:
+    print("\n" + "="*60)
+    print("--- [Post-Build] Dynamically Patching OpenCV Portability ---")
+    print("="*60)
 
-# 1. Dynamically walk the 'dist' directory to find where 'cv2' ended up
-cv2_targets = []
-for root, dirs, files in os.walk('dist'):
-    if 'cv2' in dirs:
-        cv2_targets.append(os.path.join(root, 'cv2'))
+    # 1. Dynamically walk the 'dist' directory to find where 'cv2' ended up
+    cv2_targets = []
+    for root, dirs, files in os.walk('dist'):
+        if 'cv2' in dirs:
+            cv2_targets.append(os.path.join(root, 'cv2'))
 
-if cv2_targets:
-    # This replacement script forces OpenCV to strictly use relative anchor paths
-    portable_config_content = """import os
+    if cv2_targets:
+        # This replacement script forces OpenCV to strictly use relative anchor paths
+        portable_config_content = """import os
 import sys
 
 # Dynamically locate the path relative to the active runtime bundle
@@ -127,21 +128,21 @@ BINARIES_PATHS = [ _cv2_dir ] + BINARIES_PATHS
 PYTHON_EXTENSIONS_PATHS = [ os.path.join(_cv2_dir, 'python-3.11') ] + PYTHON_EXTENSIONS_PATHS
 """
 
-    for target_dir in cv2_targets:
-        print(f"Found OpenCV directory at: {target_dir}")
-        
-        # Grab any file starting with 'config' (e.g., config.py, config-3.11.py)
-        config_files = [f for f in os.listdir(target_dir) if f.startswith('config') and f.endswith('.py')]
-        
-        if config_files:
-            for file_name in config_files:
-                file_path = os.path.join(target_dir, file_name)
-                print(f"[Scrubbing] Removing local paths from: {file_name}")
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(portable_config_content)
-            print("SUCCESS: OpenCV config files patched successfully!")
-        else:
-            print("[Info] No absolute path config files found in this cv2 instance (likely a native portable Pip wheel).")
-else:
-    print("WARNING: Could not locate any 'cv2' directory inside 'dist/'.")
-print("="*60 + "\n")
+        for target_dir in cv2_targets:
+            print(f"Found OpenCV directory at: {target_dir}")
+            
+            # Grab any file starting with 'config' (e.g., config.py, config-3.11.py)
+            config_files = [f for f in os.listdir(target_dir) if f.startswith('config') and f.endswith('.py')]
+            
+            if config_files:
+                for file_name in config_files:
+                    file_path = os.path.join(target_dir, file_name)
+                    print(f"[Scrubbing] Removing local paths from: {file_name}")
+                    with open(file_path, 'w', encoding='utf-8') as f:
+                        f.write(portable_config_content)
+                print("SUCCESS: OpenCV config files patched successfully!")
+            else:
+                print("[Info] No absolute path config files found in this cv2 instance (likely a native portable Pip wheel).")
+    else:
+        print("WARNING: Could not locate any 'cv2' directory inside 'dist/'.")
+    print("="*60 + "\n")
