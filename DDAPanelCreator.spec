@@ -125,7 +125,7 @@ if 'PYTHON_EXTENSIONS_PATHS' not in locals():
     PYTHON_EXTENSIONS_PATHS = []
 
 BINARIES_PATHS = [ _cv2_dir ] + BINARIES_PATHS
-PYTHON_EXTENSIONS_PATHS = [ os.path.join(_cv2_dir, 'python-3.11') ] + PYTHON_EXTENSIONS_PATHS
+PYTHON_EXTENSIONS_PATHS = [ _cv2_dir, os.path.join(_cv2_dir, 'python-3.11'), os.path.join(_cv2_dir, 'python-3') ] + PYTHON_EXTENSIONS_PATHS
 """
 
         for target_dir in cv2_targets:
