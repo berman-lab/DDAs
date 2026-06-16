@@ -66,3 +66,59 @@ app = BUNDLE(
         'NSAppearance': 'Aqua',                   # Forces the Aqua (Light) theme
     },
 )
+
+# =============================================================================
+# AUTOMATED POST-BUILD WORKFLOW (Runs on both Mac and Windows)
+# =============================================================================
+import os
+
+print("\n" + "="*60)
+print("--- [Post-Build] Automatically Patching OpenCV Portability ---")
+print("="*60)
+
+# 1. Define where OpenCV could hide based on the OS structure
+cv2_search_paths = [
+    os.path.join('dist', 'DDAPanelCreator.app', 'Contents', 'Frameworks', 'cv2'), # macOS Bundle
+    os.path.join('dist', 'DDAPanelCreator', 'cv2'),                                # Windows / Linux / macOS CLI
+]
+
+cv2_target_dir = None
+for path in cv2_search_paths:
+    if os.path.exists(path):
+        cv2_target_dir = path
+        break
+
+# 2. If we find it, neutralize the absolute paths inside the config files
+if cv2_target_dir:
+    print(f"Target located at: {cv2_target_dir}")
+    
+    # Grab any file starting with 'config' (e.g., config.py, config-3.11.py)
+    config_files = [f for f in os.listdir(cv2_target_dir) if f.startswith('config') and f.endswith('.py')]
+    
+    # This replacement script forces OpenCV to strictly use relative anchor paths
+    portable_config_content = """import os
+import sys
+
+# Dynamically locate the path relative to the active runtime bundle
+_cv2_dir = os.path.dirname(os.path.abspath(__file__))
+
+if 'BINARIES_PATHS' not in locals():
+    BINARIES_PATHS = []
+if 'PYTHON_EXTENSIONS_PATHS' not in locals():
+    PYTHON_EXTENSIONS_PATHS = []
+
+BINARIES_PATHS = [ _cv2_dir ] + BINARIES_PATHS
+PYTHON_EXTENSIONS_PATHS = [ os.path.join(_cv2_dir, 'python-3.11') ] + PYTHON_EXTENSIONS_PATHS
+"""
+
+    for file_name in config_files:
+        file_path = os.path.join(cv2_target_dir, file_name)
+        print(f"🧹 Scrubbing local developer environment paths out of: {file_name}")
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(portable_config_content)
+            
+    print("✅ SUCCESS: OpenCV has been successfully immunized for distribution!")
+else:
+    print("⚠️ Warning: Could not locate the bundled 'cv2' directory inside 'dist/'.")
+    print("If you haven't compiled yet, this is normal. Otherwise, double-check your app name.")
+print("="*60 + "\n")
