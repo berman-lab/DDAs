@@ -96,33 +96,21 @@ if is_mac:
     )
 
 # =============================================================================
-# AUTOMATED POST-BUILD WORKFLOW (Runs on both Mac and Windows)
+# AUTOMATED POST-BUILD WORKFLOW (Pure ASCII - Cross-Platform)
 # =============================================================================
 import os
 
 print("\n" + "="*60)
-print("--- [Post-Build] Automatically Patching OpenCV Portability ---")
+print("--- [Post-Build] Dynamically Patching OpenCV Portability ---")
 print("="*60)
 
-# 1. Define where OpenCV could hide based on the OS structure
-cv2_search_paths = [
-    os.path.join('dist', 'DDAPanelCreator.app', 'Contents', 'Frameworks', 'cv2'), # macOS Bundle
-    os.path.join('dist', 'DDAPanelCreator', 'cv2'),                                # Windows / Linux / macOS CLI
-]
+# 1. Dynamically walk the 'dist' directory to find where 'cv2' ended up
+cv2_targets = []
+for root, dirs, files in os.walk('dist'):
+    if 'cv2' in dirs:
+        cv2_targets.append(os.path.join(root, 'cv2'))
 
-cv2_target_dir = None
-for path in cv2_search_paths:
-    if os.path.exists(path):
-        cv2_target_dir = path
-        break
-
-# 2. If we find it, neutralize the absolute paths inside the config files
-if cv2_target_dir:
-    print(f"Target located at: {cv2_target_dir}")
-    
-    # Grab any file starting with 'config' (e.g., config.py, config-3.11.py)
-    config_files = [f for f in os.listdir(cv2_target_dir) if f.startswith('config') and f.endswith('.py')]
-    
+if cv2_targets:
     # This replacement script forces OpenCV to strictly use relative anchor paths
     portable_config_content = """import os
 import sys
@@ -139,14 +127,21 @@ BINARIES_PATHS = [ _cv2_dir ] + BINARIES_PATHS
 PYTHON_EXTENSIONS_PATHS = [ os.path.join(_cv2_dir, 'python-3.11') ] + PYTHON_EXTENSIONS_PATHS
 """
 
-    for file_name in config_files:
-        file_path = os.path.join(cv2_target_dir, file_name)
-        print(f"🧹 Scrubbing local developer environment paths out of: {file_name}")
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(portable_config_content)
-            
-    print("✅ SUCCESS: OpenCV has been successfully immunized for distribution!")
+    for target_dir in cv2_targets:
+        print(f"Found OpenCV directory at: {target_dir}")
+        
+        # Grab any file starting with 'config' (e.g., config.py, config-3.11.py)
+        config_files = [f for f in os.listdir(target_dir) if f.startswith('config') and f.endswith('.py')]
+        
+        if config_files:
+            for file_name in config_files:
+                file_path = os.path.join(target_dir, file_name)
+                print(f"[Scrubbing] Removing local paths from: {file_name}")
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(portable_config_content)
+            print("SUCCESS: OpenCV config files patched successfully!")
+        else:
+            print("[Info] No absolute path config files found in this cv2 instance (likely a native portable Pip wheel).")
 else:
-    print("⚠️ Warning: Could not locate the bundled 'cv2' directory inside 'dist/'.")
-    print("If you haven't compiled yet, this is normal. Otherwise, double-check your app name.")
+    print("WARNING: Could not locate any 'cv2' directory inside 'dist/'.")
 print("="*60 + "\n")
